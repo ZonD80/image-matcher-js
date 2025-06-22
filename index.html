@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Similarity Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .threshold-slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .threshold-slider:hover {
+            opacity: 1;
+        }
+
+        .threshold-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .threshold-value {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 40px;
+        }
+
+        .find-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .find-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .find-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .stats {
+            padding: 20px 30px;
+            background: #f1f3f4;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .results {
+            padding: 30px;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #6c757d;
+            font-size: 1.2em;
+            margin: 50px 0;
+        }
+
+        .group {
+            margin-bottom: 40px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .group-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-title {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .group-similarity {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .group-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .image-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-info {
+            padding: 10px;
+            font-size: 0.85em;
+            color: #6c757d;
+            background: #f8f9fa;
+        }
+
+        .image-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: space-between;
+            }
+
+            .group-images {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .image-card img {
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Image Similarity Detector</h1>
+            <p>Advanced duplicate image detection using multiple algorithms</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="threshold">Similarity Threshold:</label>
+                <input type="range" id="threshold" class="threshold-slider" min="0.1" max="1.0" step="0.05" value="0.8">
+                <span class="threshold-value" id="threshold-value">80%</span>
+            </div>
+            
+            <button id="find-similar" class="find-btn">
+                Find Similar Images
+            </button>
+
+            <div class="loading-spinner" id="loading-spinner"></div>
+        </div>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text"></div>
+
+        <div class="error-message" id="error-message"></div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-number" id="total-images">0</div>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="similar-groups">0</div>
+                <div class="stat-label">Similar Groups</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="potential-duplicates">0</div>
+                <div class="stat-label">Potential Duplicates</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="processing-time">0</div>
+                <div class="stat-label">Processing Time (s)</div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="no-results">
+                Click "Find Similar Images" to start analyzing the test images for duplicates and similarities.
+            </div>
+        </div>
+    </div>
+
+    <script src="image-matcher.js"></script>
+    <script>
+        class ImageSimilarityApp {
+            constructor() {
+                this.matcher = new ImageMatcher();
+                this.images = [];
+                this.isProcessing = false;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.loadTestImages();
+            }
+
+            initializeElements() {
+                this.thresholdSlider = document.getElementById('threshold');
+                this.thresholdValue = document.getElementById('threshold-value');
+                this.findBtn = document.getElementById('find-similar');
+                this.loadingSpinner = document.getElementById('loading-spinner');
+                this.progressBar = document.getElementById('progress-bar');
+                this.progressFill = document.getElementById('progress-fill');
+                this.progressText = document.getElementById('progress-text');
+                this.errorMessage = document.getElementById('error-message');
+                this.stats = document.getElementById('stats');
+                this.results = document.getElementById('results');
+            }
+
+            setupEventListeners() {
+                this.thresholdSlider.addEventListener('input', (e) => {
+                    const value = Math.round(e.target.value * 100);
+                    this.thresholdValue.textContent = value + '%';
+                });
+
+                this.findBtn.addEventListener('click', () => {
+                    if (!this.isProcessing) {
+                        this.findSimilarImages();
+                    }
+                });
+            }
+
+            async loadTestImages() {
+                // This will be populated by the build script
+                this.images = GENERATED_IMAGE_LIST;
+                this.updateStats();
+            }
+
+            updateStats() {
+                document.getElementById('total-images').textContent = this.images.length;
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    this.errorMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            updateProgress(data) {
+                if (data.phase === 'processing') {
+                    const percent = (data.current / data.total) * 50; // First 50% for processing
+                    this.progressFill.style.width = percent + '%';
+                    this.progressText.textContent = `Processing images: ${data.current}/${data.total}`;
+                } else if (data.phase === 'comparing') {
+                    const percent = 50 + (data.current / data.total) * 50; // Next 50% for comparing
+                    this.progressFill.style.width = percent + '%';
+                    this.progressText.textContent = `Comparing images: ${data.current}/${data.total}`;
+                }
+            }
+
+            async findSimilarImages() {
+                if (this.images.length === 0) {
+                    this.showError('No images loaded to analyze');
+                    return;
+                }
+
+                this.isProcessing = true;
+                this.findBtn.disabled = true;
+                this.findBtn.textContent = 'Processing...';
+                this.loadingSpinner.style.display = 'block';
+                this.progressBar.style.display = 'block';
+                this.progressText.style.display = 'block';
+                this.errorMessage.style.display = 'none';
+
+                const startTime = Date.now();
+                const threshold = parseFloat(this.thresholdSlider.value);
+
+                try {
+                    const groups = await this.matcher.findSimilarImages(
+                        this.images,
+                        threshold,
+                        (progress) => this.updateProgress(progress)
+                    );
+
+                    const endTime = Date.now();
+                    const processingTime = ((endTime - startTime) / 1000).toFixed(1);
+
+                    this.displayResults(groups, processingTime);
+                    
+                    // Update stats
+                    document.getElementById('similar-groups').textContent = groups.length;
+                    document.getElementById('potential-duplicates').textContent = 
+                        groups.reduce((sum, group) => sum + group.count, 0);
+                    document.getElementById('processing-time').textContent = processingTime;
+                    this.stats.style.display = 'flex';
+
+                } catch (error) {
+                    console.error('Error finding similar images:', error);
+                    this.showError('Error processing images: ' + error.message);
+                } finally {
+                    this.isProcessing = false;
+                    this.findBtn.disabled = false;
+                    this.findBtn.textContent = 'Find Similar Images';
+                    this.loadingSpinner.style.display = 'none';
+                    this.progressBar.style.display = 'none';
+                    this.progressText.style.display = 'none';
+                    this.progressFill.style.width = '0%';
+                }
+            }
+
+            displayResults(groups, processingTime) {
+                if (groups.length === 0) {
+                    this.results.innerHTML = `
+                        <div class="no-results">
+                            <h3>No similar images found</h3>
+                            <p>Try lowering the similarity threshold or check if images are properly loaded.</p>
+                            <p>Processing completed in ${processingTime}s</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `<h2 style="margin-bottom: 30px; color: #2c3e50;">Found ${groups.length} groups of similar images</h2>`;
+
+                groups.forEach((group, index) => {
+                    const similarityPercent = Math.round(group.averageSimilarity * 100);
+                    
+                    html += `
+                        <div class="group">
+                            <div class="group-header">
+                                <div class="group-title">
+                                    Group ${index + 1} - ${group.count} similar images
+                                </div>
+                                <div class="group-similarity">
+                                    ${similarityPercent}% similar
+                                </div>
+                            </div>
+                            <div class="group-images">
+                    `;
+
+                    group.images.forEach(img => {
+                        const imageName = img.id.split('/').pop();
+                        html += `
+                            <div class="image-card">
+                                <img src="${img.id}" alt="${imageName}" loading="lazy">
+                                <div class="image-info">
+                                    <div class="image-name">${imageName}</div>
+                                    <div>${img.width}×${img.height}</div>
+                                    <div>Ratio: ${img.aspectRatio.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                this.results.innerHTML = html;
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new ImageSimilarityApp();
+        });
+
+        // Placeholder for generated image list
+        const GENERATED_IMAGE_LIST = [];
+    </script>
+</body>
+</html>

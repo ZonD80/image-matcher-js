@@ -1,0 +1,39 @@
+{
+  "name": "image-similarity-detector",
+  "version": "1.0.0",
+  "description": "Advanced browser-based image similarity detection library",
+  "main": "image-matcher.js",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "node build.js --serve",
+    "test": "node test-puppeteer.js",
+    "dev": "node build.js --serve --port 3000"
+  },
+  "keywords": [
+    "image",
+    "similarity",
+    "duplicate",
+    "detection",
+    "perceptual-hash",
+    "browser",
+    "javascript"
+  ],
+  "author": "Image Matcher Library",
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "files": [
+    "image-matcher.js",
+    "index.html",
+    "build.js",
+    "README.md"
+  ]
+}
